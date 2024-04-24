@@ -1,63 +1,52 @@
-// const express = require('express')
-// const app = express()
-// const port = 3000
-
-// const mysql = require("mysql2");
-
-// const pool = mysql.createPool({
-//     host: "localhost",
-//     user: "root",
-//     password: "",//Insert your password here
-//     connectionLimit: 10
-// })
-
-// pool.query(`select * from studysync.user`, (err, res)=>{
-//     return console.log(res)
-// })
-
-
-
-// app.get('/', (req, res) => res.send('Hello World!'))
-// app.listen(port, () => console.log(`Example app listening on port ${port}!`))
-
 const express = require('express');
 const cors = require('cors');
 const mysql = require('mysql2');
+const { Form } = require('react-router-dom');
+
 
 const app = express();
 const port = 3001;
 app.use(cors());
 app.use(express.json());
-
-// MySQL Connection Pool
+//MySQL Connection Pool
 const pool = mysql.createPool({
-    host: 'localhost',
-    user: 'root',
-    password: '', // Insert your password here
-    database: 'studysync', // Your database name
-    connectionLimit: 10
-});
+     host: "localhost",
+     user: "root",//Your User ID here
+     password: "karen1231",//Insert your password here
+     database: 'studysync',//Your Database name
+     connectionLimit : 10
+ });
+
+// pool.query(`select * from studysync.user`, (err, res)=>{
+//     return console.log(res)
+// })
+//Above is a test query to make sure it works
 
 // Route to add calendar events to the database
 app.post('/api/add-event', (req, res) => {
-    const eventData = req.body;
+    const eventData = req.body;//Gets the JSON body
     console.log('Received event data:', eventData);
 
     if (eventData) {
-        res.status(200).json({ message: 'Event data received!' });
+        var {title, dateTime} = eventData;//Parses the JSON sent to the function
+        var FormattedDate = new String(dateTime).slice(0,9) + " " + new String(dateTime).slice(11,15);//Sets the date in SQL Format by slicing it
 
         // Add event to database
-        // pool.query('INSERT INTO events (title, dateTime) VALUES (?, ?)', [eventData.title, eventData.dateTime], (err, results) => {
-        //     if (err) {
-        //         console.error('Error inserting event:', err);
-        //         return res.status(500).json({ error: 'Failed to add event to database' });
-        //     }
-    
-        //     console.log('Event added to database:', results.insertId);
-        //     res.status(201).json({ message: 'Event added successfully', eventId: results.insertId });
-        // });
+        var sql = "INSERT INTO task (taskTitle, userID, date) VALUES ('"+title+"', '123', '"+FormattedDate+"')";//The SQL Insert statement, Note 123 is a current placeholder
+        pool.query(sql, function (err, result){//Querys to add the values in
+            if (err)//If SQL gives an error
+            {
+                console.error('Error inserting:', err);//Print the error to the console
+                res.status(500).json({ error: 'Failed to add to database' });//Inform the website it failed to add
+            }
+            else//If successful
+            {
+                console.log("1 record inserted");//Print that it recorded the data
+                res.status(201).json({ message: 'Data added successfully'});  //Send to the database a success along with event and insertID 
+            }
+        });
     } else {
-        res.status(400).json({ error: 'Event data not received or invalid' });
+        res.status(400).json({ error: 'Event data not received' });//Sets the response status to 400 so the website knows it data wasn't recieved
     }
 });
 
