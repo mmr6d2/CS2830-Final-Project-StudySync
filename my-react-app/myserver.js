@@ -29,7 +29,7 @@ app.post('/api/add-event', (req, res) => {
 
     if (eventData) {
         var {title, dateTime} = eventData;//Parses the JSON sent to the function
-        var FormattedDate = new String(dateTime).slice(0,9) + " " + new String(dateTime).slice(11,15);//Sets the date in SQL Format by slicing it
+        var FormattedDate = new Date(dateTime).toISOString().slice(0, 19).replace('T', ' ')//Sets the date in SQL Format by slicing it
 
         // Add event to database
         var sql = "INSERT INTO task (taskTitle, userID, date) VALUES ('"+title+"', '123', '"+FormattedDate+"')";//The SQL Insert statement, Note 123 is a current placeholder
