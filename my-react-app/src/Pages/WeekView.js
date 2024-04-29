@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import '../App.css';
 
 const App = () => {
@@ -18,6 +18,25 @@ const App = () => {
   const [showAddEventModal, setShowAddEventModal] = useState(false);
   const [eventTitle, setEventTitle] = useState('');
   const [eventDateTime, setEventDateTime] = useState('');
+  const [events, setEvents] = useState([]);
+
+  useEffect(() => {
+    const fetchEvents = async () => {
+      try {
+        const response = await fetch('http://localhost:3001/api/events');
+        if (!response.ok) {
+          throw new Error(`Failed to fetch events - ${response.status}`);
+        }
+        const data = await response.json();
+        console.log(data);
+        setEvents(data);
+      } catch (error) {
+        console.error('Error fetching events:', error);
+      }
+    };
+
+    fetchEvents();
+  }, []);
 
   const to12HourFormat = (hour) => {
     if (hour === 0) return "12 am";
@@ -103,7 +122,6 @@ const App = () => {
       console.error('Error adding event:', error);
     }
   };
-  
 
   return (
     <div className="App">
@@ -120,6 +138,28 @@ const App = () => {
           <div key={index} className="date-column">
             <h3>{date.toLocaleDateString("en-US", { weekday: 'long' })}</h3>
             <span>{date.toLocaleDateString()}</span>
+            {/* Render events for each day */}
+            {events.map((event, eventIndex) => {
+              const eventDate = new Date(event.dateTime);
+              
+              console.log(eventDate.getDate());
+              console.log(date.getDate())
+              if (
+                eventDate.getFullYear() === date.getFullYear() &&
+                eventDate.getMonth() === date.getMonth() &&
+                eventDate.getDate() === date.getDate()
+              ) {
+                const eventHour = eventDate.getHours();
+                const eventMinute = eventDate.getMinutes();
+                const eventTop = ((eventHour - 6) * 60 + eventMinute) * 0.7;
+                return (
+                  <div key={eventIndex} className="event" style={{ top: eventTop }}>
+                    {event.title}
+                  </div>
+                );
+              }
+              return null;
+            })}
           </div>
         ))}
         {/* Render the days of the week */}
@@ -140,7 +180,7 @@ const App = () => {
           </div>
         ))}
       </div>
-
+  
       {/* Event Add Modal */}
       {showAddEventModal && (
         <div className="modal-overlay">
@@ -169,6 +209,7 @@ const App = () => {
       )}
     </div>
   );
+  
 };
 
 export default App;

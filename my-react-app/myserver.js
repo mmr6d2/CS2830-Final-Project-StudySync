@@ -12,7 +12,7 @@ app.use(express.json());
 const pool = mysql.createPool({
      host: "localhost",
      user: "root",//Your User ID here
-     password: "",//Insert your password here
+     password: "Lps800691*",//Insert your password here
      database: 'studysync',//Your Database name
      connectionLimit : 10
  });
@@ -21,6 +21,24 @@ const pool = mysql.createPool({
 //     return console.log(res)
 // })
 //Above is a test query to make sure it works
+
+
+// Route to fetch all events from the database
+app.get('/api/events', (req, res) => {
+    // Query to select all events from the database
+    const sql = "SELECT * FROM task";
+    // Execute the query
+    pool.query(sql, (err, result) => {
+        if (err) {
+            console.error('Error fetching events:', err);
+            res.status(500).json({ error: 'Failed to fetch events' });
+        } else {
+            // Send the fetched events as JSON response
+            res.status(200).json(result);
+        }
+    });
+});
+
 
 // Route to add calendar events to the database
 app.post('/api/add-event', (req, res) => {
