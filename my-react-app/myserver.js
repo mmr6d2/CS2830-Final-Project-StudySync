@@ -12,7 +12,7 @@ app.use(express.json());
 const pool = mysql.createPool({
      host: "localhost",
      user: "root",//Your User ID here
-     password: "",//Insert your password here
+     password: "karen1231",//Insert your password here
      database: 'studysync',//Your Database name
      connectionLimit : 10
  });
@@ -47,6 +47,36 @@ app.post('/api/add-event', (req, res) => {
         });
     } else {
         res.status(400).json({ error: 'Event data not received' });//Sets the response status to 400 so the website knows it data wasn't recieved
+    }
+});
+
+// Route to get calendar events from the database of a specific day
+app.post('/api/get-event', (req,res) => {
+    const eventData = req.body;//Gets the JSON body
+    console.log('Recieved event data:'. eventData);
+
+    if(eventData)
+    {
+        var {userID, dateTime} = eventData;//Parses the JSON sent to the function
+        var FormattedDate = new Date(dateTime).toISOString().slice(0,19).replace('T', ' ');//Sets the date in SQL Format
+        //Get Event from database
+        var sql = "SELECT * FROM task JOIN sharedtask WHERE Date(dateTime) = "+FormattedDate+" AND (sharedUser = +"+ userID +" OR userID = "+ userID +") ORDER BY dateTime ASC";
+        pool.query(sql, function (err, results){
+            if(err)//If SQL gives error
+            {
+                console.error('Error retrieving:', err);
+                res.status(500).json({ error: 'Failed to retrieve from database'});//Sends message that it failed
+            }
+            else
+            {
+                console.log("Records retrieved");
+                res.status(201).send(results);//Sends the resuts of the query
+            }
+        })
+    }
+    else
+    {
+        res.status(400).json({ error: 'Pull Request Data Not Recieved'});//Tells the webpage that no data was sent to it
     }
 });
 
