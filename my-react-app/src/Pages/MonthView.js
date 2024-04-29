@@ -50,8 +50,29 @@ const MonthView = () => {
           <button className="mr-1 inline-block bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded" onClick={handlePrevMonth}>&#8592; Prev Month</button>
           <button className="mr-1 inline-block bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded" onClick={handleNextMonth}>Next Month &#8594;</button>
         </div>
-      </header>
+      </header>      
       <div className="month-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '10px' }}>
+      <div key='0' className="date-column">
+            <h3>Sunday</h3>
+      </div>
+      <div key='1' className="date-column">
+            <h3>Monday</h3>
+      </div>
+      <div key='3' className="date-column">
+            <h3>Tuesday</h3>
+      </div>
+      <div key='4' className="date-column">
+            <h3>Wednesday</h3>
+      </div>
+      <div key='5' className="date-column">
+            <h3>Thursday</h3>
+      </div>
+      <div key='6' className="date-column">
+            <h3>Friday</h3>
+      </div>
+      <div key='7' className="date-column">
+            <h3>Saturday</h3>
+      </div>
         {generateMonthDates(currentDate).map((date, index) => (
           <div key={index} className="date-cell" style={{ border: '1px solid #ccc', padding: '10px' }}>
             <span>{date.getDate()}</span>
