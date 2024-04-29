@@ -12,7 +12,7 @@ app.use(express.json());
 const pool = mysql.createPool({
      host: "localhost",
      user: "root",//Your User ID here
-     password: "karen1231",//Insert your password here
+     password: "",//Insert your password here
      database: 'studysync',//Your Database name
      connectionLimit : 10
  });
@@ -32,7 +32,7 @@ app.post('/api/add-event', (req, res) => {
         var FormattedDate = new Date(dateTime).toISOString().slice(0, 19).replace('T', ' ')//Sets the date in SQL Format by slicing it
 
         // Add event to database
-        var sql = "INSERT INTO task (taskTitle, userID, date) VALUES ('"+title+"', '123', '"+FormattedDate+"')";//The SQL Insert statement, Note 123 is a current placeholder
+        var sql = "INSERT INTO task (taskTitle, userID, dateTime) VALUES ('"+title+"', '123', '"+FormattedDate+"')";//The SQL Insert statement, Note 123 is a current placeholder
         pool.query(sql, function (err, result){//Querys to add the values in
             if (err)//If SQL gives an error
             {
