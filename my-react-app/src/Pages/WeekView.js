@@ -16,6 +16,7 @@ const App = () => {
     const tempDate = startDate;
     tempDate.setDate(startDate.getDate() - diff);
     setStartDate(tempDate);
+  
     const fetchEvents = async () => {
       try {
         const response = await fetch('http://localhost:3001/api/events');
@@ -23,11 +24,24 @@ const App = () => {
           throw new Error(`Failed to fetch events - ${response.status}`);
         }
         const data = await response.json();
-        setEvents(data);
+  
+        // Convert event dates from UTC to local time zone
+        const convertedEvents = data.map(event => {
+          const eventDate = new Date(event.dateTime);
+          // Adjust for the timezone offset
+          const localDate = new Date(eventDate.getTime() - (eventDate.getTimezoneOffset() * 60000));
+          return {
+            ...event,
+            dateTime: localDate.toLocaleString() // Convert to local time string
+          };
+        });
+  
+        setEvents(convertedEvents);
       } catch (error) {
         console.error('Error fetching events:', error);
       }
     };
+  
     fetchEvents();
   }, []);
 
@@ -96,11 +110,17 @@ const App = () => {
         throw new Error(`Failed to add event - ${response.status}`);
       }
       const data = await response.json();
-      setEvents([...events, data]);
+      // Convert event date from UTC to local time zone
+      const convertedEvent = {
+        ...data,
+        dateTime: new Date(data.dateTime).toLocaleString()
+      };
+      console.log('Added event time:', convertedEvent.dateTime); // Log added event time
+      setEvents([...events, convertedEvent]);
       setEventTitle('');
       setEventDateTime('');
       setShowAddEventModal(false);
-      window.location.reload();//Refreshes page
+      window.location.reload(); // Refreshes page
     } catch (error) {
       console.error('Error adding event:', error);
     }
@@ -128,13 +148,12 @@ const App = () => {
                 const eventDate = new Date(event.dateTime);
                 return (
                   eventDate.getDate() === date.getDate() && // Check if the event is for the current day
-                  eventDate.getMonth() === date.getMonth() &&//Checks if the event is on the right month
-                  eventDate.getFullYear() === date.getFullYear() &&//Checks if the event is on the right year
+                  eventDate.getMonth() === date.getMonth() && // Checks if the event is on the right month
+                  eventDate.getFullYear() === date.getFullYear() && // Checks if the event is on the right year
                   eventDate.getHours() === hour // Check if the event is at the current hour
                 );
               });
 
-              //console.log('Events for hour', hour, ':', eventsForHour);
               // Render the hour and associated events
               return (
                 <div key={hour} className="hour">
@@ -180,8 +199,6 @@ const App = () => {
       )}
     </div>
   );
-  
-  
 };
 
 export default App;
