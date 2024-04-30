@@ -5,16 +5,7 @@ const App = () => {
   const [startDate, setStartDate] = useState(new Date("2024-04-08"));
   const daysOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
   const hoursOfDay = Array.from({ length: 15 }, (_, i) => i + 6); // Hours from 6am to 8pm
-  const [notes, setNotes] = useState({
-    Monday: '',
-    Tuesday: '',
-    Wednesday: '',
-    Thursday: '',
-    Friday: '',
-    Saturday: '',
-    Sunday: ''
-  });
-
+  const [notes, setNotes] = useState({});
   const [showAddEventModal, setShowAddEventModal] = useState(false);
   const [eventTitle, setEventTitle] = useState('');
   const [eventDateTime, setEventDateTime] = useState('');
@@ -28,24 +19,18 @@ const App = () => {
           throw new Error(`Failed to fetch events - ${response.status}`);
         }
         const data = await response.json();
-  
-        // Sort the events by their dateTime property
-        const sortedEvents = data.sort((a, b) => new Date(a.dateTime) - new Date(b.dateTime));
-  
-        setEvents(sortedEvents);
+        setEvents(data);
       } catch (error) {
         console.error('Error fetching events:', error);
       }
     };
-  
     fetchEvents();
   }, []);
 
   const to12HourFormat = (hour) => {
-    if (hour === 0) return "12 am";
-    else if (hour === 12) return "12 pm";
-    else if (hour < 12) return `${hour} am`;
-    else return `${hour - 12} pm`;
+    const suffix = hour >= 12 ? 'pm' : 'am';
+    const formattedHour = hour % 12 || 12;
+    return `${formattedHour} ${suffix}`;
   };
 
   const generateWeekDates = (startDate) => {
@@ -77,9 +62,7 @@ const App = () => {
     });
   };
 
-  const handleAddEventClick = () => {
-    setShowAddEventModal(true);
-  };
+  const handleAddEventClick = () => setShowAddEventModal(true);
 
   const handleCancelAddEvent = () => {
     setShowAddEventModal(false);
@@ -87,17 +70,12 @@ const App = () => {
     setEventDateTime('');
   };
 
-  const handleEventTitleChange = (e) => {
-    setEventTitle(e.target.value);
-  };
+  const handleEventTitleChange = (e) => setEventTitle(e.target.value);
 
-  const handleEventDateTimeChange = (e) => {
-    setEventDateTime(e.target.value);
-  };
+  const handleEventDateTimeChange = (e) => setEventDateTime(e.target.value);
 
   const handleAddEventSubmit = async (e) => {
     e.preventDefault();
-  
     try {
       const response = await fetch('http://localhost:3001/api/add-event', {
         method: 'POST',
@@ -109,18 +87,14 @@ const App = () => {
           dateTime: eventDateTime
         })
       });
-  
       if (!response.ok) {
         throw new Error(`Failed to add event - ${response.status}`);
       }
-  
       const data = await response.json();
-      console.log('Event added successfully:', data);
-  
+      setEvents([...events, data]);
       setEventTitle('');
       setEventDateTime('');
       setShowAddEventModal(false);
-  
     } catch (error) {
       console.error('Error adding event:', error);
     }
@@ -143,19 +117,16 @@ const App = () => {
             <span>{date.toLocaleDateString()}</span>
             {/* Render events for each day */}
             {events.map((event, eventIndex) => {
+              console.log("Event:", event);
               const eventDate = new Date(event.dateTime);
-              // Check if the event is for the current day
-              if (
-                eventDate.getFullYear() === date.getFullYear() &&
-                eventDate.getMonth() === date.getMonth() &&
-                eventDate.getDate() === date.getDate()
-              ) {
+              if (eventDate.toDateString() === date.toDateString()) {
                 const eventHour = eventDate.getHours();
                 const eventMinute = eventDate.getMinutes();
                 const eventTop = ((eventHour - 6) * 60 + eventMinute) * 0.7;
+                console.log('Event Title:', event.title);
                 return (
                   <div key={eventIndex} className="event" style={{ top: eventTop }}>
-                    {event.title}
+                    {event.taskTitle}
                   </div>
                 );
               }
@@ -169,19 +140,16 @@ const App = () => {
             <h2>{day}</h2>
             {/* Render the hours of the day */}
             {hoursOfDay.map(hour => {
-              // Filter events for the current day and hour
               const eventsForHour = events.filter(event => {
                 const eventDate = new Date(event.dateTime);
                 return (
-                  eventDate.getDay() === index && // Check if the event is for the current day
-                  eventDate.getHours() === hour // Check if the event is at the current hour
+                  eventDate.getDay() === index &&
+                  eventDate.getHours() === hour
                 );
               });
-
-              // Render events for the current hour
               return (
                 <div key={hour} className="hour">
-                  <span>{to12HourFormat(hour)} </span>
+                  <span>{to12HourFormat(hour)}</span>
                   {eventsForHour.map((event, eventIndex) => (
                     <div key={eventIndex} className="event">
                       {event.title}
@@ -192,12 +160,11 @@ const App = () => {
             })}
             {/* Notes section */}
             <div className="notes">
-              <textarea value={notes[day]} onChange={(e) => handleNotesChange(day, e)} placeholder="Add notes..." />
+              <textarea value={notes[day] || ''} onChange={(e) => handleNotesChange(day, e)} placeholder="Add notes..." />
             </div>
           </div>
         ))}
       </div>
-  
       {/* Event Add Modal */}
       {showAddEventModal && (
         <div className="modal-overlay">
