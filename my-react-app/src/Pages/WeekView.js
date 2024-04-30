@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import '../App.css';
 
 const App = () => {
-  const [startDate, setStartDate] = useState(new Date("2024-04-08"));
+  const [startDate, setStartDate] = useState(new Date());
   const daysOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
   const hoursOfDay = Array.from({ length: 15 }, (_, i) => i + 6); // Hours from 6am to 8pm
   const [notes, setNotes] = useState({});
@@ -12,6 +12,10 @@ const App = () => {
   const [events, setEvents] = useState([]);
 
   useEffect(() => {
+    const diff = startDate.getDay();
+    const tempDate = startDate;
+    tempDate.setDate(startDate.getDate() - diff);
+    setStartDate(tempDate);
     const fetchEvents = async () => {
       try {
         const response = await fetch('http://localhost:3001/api/events');
@@ -72,13 +76,7 @@ const App = () => {
 
   const handleEventTitleChange = (e) => setEventTitle(e.target.value);
 
-  const handleEventDateTimeChange = (e) => {
-    // Convert the selected date-time value to ISO 8601 format
-    const selectedDateTime = new Date(e.target.value).toISOString().slice(0, 19).replace('T', ' ');
-  
-    // Set the formatted date-time value to eventDateTime state
-    setEventDateTime(selectedDateTime);
-  };
+  const handleEventDateTimeChange = (e) => setEventDateTime(e.target.value);
   
 
   const handleAddEventSubmit = async (e) => {
@@ -102,6 +100,7 @@ const App = () => {
       setEventTitle('');
       setEventDateTime('');
       setShowAddEventModal(false);
+      window.location.reload();//Refreshes page
     } catch (error) {
       console.error('Error adding event:', error);
     }
@@ -128,7 +127,9 @@ const App = () => {
               const eventsForHour = events.filter(event => {
                 const eventDate = new Date(event.dateTime);
                 return (
-                  eventDate.getDay() === date.getDay() && // Check if the event is for the current day
+                  eventDate.getDate() === date.getDate() && // Check if the event is for the current day
+                  eventDate.getMonth() === date.getMonth() &&//Checks if the event is on the right month
+                  eventDate.getFullYear() === date.getFullYear() &&//Checks if the event is on the right year
                   eventDate.getHours() === hour // Check if the event is at the current hour
                 );
               });
@@ -150,12 +151,6 @@ const App = () => {
             })}
           </div>
         ))}
-        {/* Notes section */}
-        <div className="notes">
-          {daysOfWeek.map((day, index) => (
-            <textarea key={day} value={notes[day] || ''} onChange={(e) => handleNotesChange(day, e)} placeholder="Add notes..." />
-          ))}
-        </div>
       </div>
       {/* Event Add Modal */}
       {showAddEventModal && (
