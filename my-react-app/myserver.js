@@ -59,6 +59,7 @@ app.post('/api/add-event', (req, res) => {
             }
             else//If successful
             {
+                
                 console.log("1 record inserted");//Print that it recorded the data
                 res.status(201).json({ message: 'Data added successfully'});  //Send to the database a success along with event and insertID 
             }

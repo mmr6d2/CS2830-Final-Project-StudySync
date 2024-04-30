@@ -28,13 +28,16 @@ const App = () => {
           throw new Error(`Failed to fetch events - ${response.status}`);
         }
         const data = await response.json();
-        console.log(data);
-        setEvents(data);
+  
+        // Sort the events by their dateTime property
+        const sortedEvents = data.sort((a, b) => new Date(a.dateTime) - new Date(b.dateTime));
+  
+        setEvents(sortedEvents);
       } catch (error) {
         console.error('Error fetching events:', error);
       }
     };
-
+  
     fetchEvents();
   }, []);
 
@@ -141,9 +144,7 @@ const App = () => {
             {/* Render events for each day */}
             {events.map((event, eventIndex) => {
               const eventDate = new Date(event.dateTime);
-              
-              console.log(eventDate.getDate());
-              console.log(date.getDate())
+              // Check if the event is for the current day
               if (
                 eventDate.getFullYear() === date.getFullYear() &&
                 eventDate.getMonth() === date.getMonth() &&
@@ -167,12 +168,28 @@ const App = () => {
           <div key={day} className="day">
             <h2>{day}</h2>
             {/* Render the hours of the day */}
-            {hoursOfDay.map(hour => (
-              <div key={hour} className="hour">
-                <span>{to12HourFormat(hour)} </span>
-                {/* You can add tasks or events for each hour here */}
-              </div>
-            ))}
+            {hoursOfDay.map(hour => {
+              // Filter events for the current day and hour
+              const eventsForHour = events.filter(event => {
+                const eventDate = new Date(event.dateTime);
+                return (
+                  eventDate.getDay() === index && // Check if the event is for the current day
+                  eventDate.getHours() === hour // Check if the event is at the current hour
+                );
+              });
+
+              // Render events for the current hour
+              return (
+                <div key={hour} className="hour">
+                  <span>{to12HourFormat(hour)} </span>
+                  {eventsForHour.map((event, eventIndex) => (
+                    <div key={eventIndex} className="event">
+                      {event.title}
+                    </div>
+                  ))}
+                </div>
+              );
+            })}
             {/* Notes section */}
             <div className="notes">
               <textarea value={notes[day]} onChange={(e) => handleNotesChange(day, e)} placeholder="Add notes..." />
@@ -209,7 +226,6 @@ const App = () => {
       )}
     </div>
   );
-  
 };
 
 export default App;
