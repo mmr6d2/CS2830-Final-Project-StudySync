@@ -72,7 +72,14 @@ const App = () => {
 
   const handleEventTitleChange = (e) => setEventTitle(e.target.value);
 
-  const handleEventDateTimeChange = (e) => setEventDateTime(e.target.value);
+  const handleEventDateTimeChange = (e) => {
+    // Convert the selected date-time value to ISO 8601 format
+    const selectedDateTime = new Date(e.target.value).toISOString().slice(0, 19).replace('T', ' ');
+  
+    // Set the formatted date-time value to eventDateTime state
+    setEventDateTime(selectedDateTime);
+  };
+  
 
   const handleAddEventSubmit = async (e) => {
     e.preventDefault();
@@ -115,55 +122,40 @@ const App = () => {
           <div key={index} className="date-column">
             <h3>{date.toLocaleDateString("en-US", { weekday: 'long' })}</h3>
             <span>{date.toLocaleDateString()}</span>
-            {/* Render events for each day */}
-            {events.map((event, eventIndex) => {
-              console.log("Event:", event);
-              const eventDate = new Date(event.dateTime);
-              if (eventDate.toDateString() === date.toDateString()) {
-                const eventHour = eventDate.getHours();
-                const eventMinute = eventDate.getMinutes();
-                const eventTop = ((eventHour - 6) * 60 + eventMinute) * 0.7;
-                console.log('Event Title:', event.title);
-                return (
-                  <div key={eventIndex} className="event" style={{ top: eventTop }}>
-                    {event.taskTitle}
-                  </div>
-                );
-              }
-              return null;
-            })}
-          </div>
-        ))}
-        {/* Render the days of the week */}
-        {daysOfWeek.map((day, index) => (
-          <div key={day} className="day">
-            <h2>{day}</h2>
             {/* Render the hours of the day */}
             {hoursOfDay.map(hour => {
+              // Filter events for the current day and hour
               const eventsForHour = events.filter(event => {
                 const eventDate = new Date(event.dateTime);
                 return (
-                  eventDate.getDay() === index &&
-                  eventDate.getHours() === hour
+                  eventDate.getDay() === date.getDay() && // Check if the event is for the current day
+                  eventDate.getHours() === hour // Check if the event is at the current hour
                 );
               });
+
+              //console.log('Events for hour', hour, ':', eventsForHour);
+              // Render the hour and associated events
               return (
                 <div key={hour} className="hour">
                   <span>{to12HourFormat(hour)}</span>
+                  {/* Render events for the current hour */}
                   {eventsForHour.map((event, eventIndex) => (
                     <div key={eventIndex} className="event">
-                      {event.title}
+                      {/* Render the task title */}
+                      {event.taskTitle}
                     </div>
                   ))}
                 </div>
               );
             })}
-            {/* Notes section */}
-            <div className="notes">
-              <textarea value={notes[day] || ''} onChange={(e) => handleNotesChange(day, e)} placeholder="Add notes..." />
-            </div>
           </div>
         ))}
+        {/* Notes section */}
+        <div className="notes">
+          {daysOfWeek.map((day, index) => (
+            <textarea key={day} value={notes[day] || ''} onChange={(e) => handleNotesChange(day, e)} placeholder="Add notes..." />
+          ))}
+        </div>
       </div>
       {/* Event Add Modal */}
       {showAddEventModal && (
@@ -193,6 +185,8 @@ const App = () => {
       )}
     </div>
   );
+  
+  
 };
 
 export default App;
