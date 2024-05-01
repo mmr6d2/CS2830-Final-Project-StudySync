@@ -1,29 +1,54 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import '../App.css';
 
 const App = () => {
-  const [startDate, setStartDate] = useState(new Date("2024-04-08"));
+  const [startDate, setStartDate] = useState(new Date());
   const daysOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
   const hoursOfDay = Array.from({ length: 15 }, (_, i) => i + 6); // Hours from 6am to 8pm
-  const [notes, setNotes] = useState({
-    Monday: '',
-    Tuesday: '',
-    Wednesday: '',
-    Thursday: '',
-    Friday: '',
-    Saturday: '',
-    Sunday: ''
-  });
-
+  const [notes, setNotes] = useState({});
   const [showAddEventModal, setShowAddEventModal] = useState(false);
   const [eventTitle, setEventTitle] = useState('');
   const [eventDateTime, setEventDateTime] = useState('');
+  const [events, setEvents] = useState([]);
+
+  useEffect(() => {
+    const diff = startDate.getDay();
+    const tempDate = startDate;
+    tempDate.setDate(startDate.getDate() - diff);
+    setStartDate(tempDate);
+  
+    const fetchEvents = async () => {
+      try {
+        const response = await fetch('http://localhost:3001/api/events');
+        if (!response.ok) {
+          throw new Error(`Failed to fetch events - ${response.status}`);
+        }
+        const data = await response.json();
+  
+        // Convert event dates from UTC to local time zone
+        const convertedEvents = data.map(event => {
+          const eventDate = new Date(event.dateTime);
+          // Adjust for the timezone offset
+          const localDate = new Date(eventDate.getTime() - (eventDate.getTimezoneOffset() * 60000));
+          return {
+            ...event,
+            dateTime: localDate.toLocaleString() // Convert to local time string
+          };
+        });
+  
+        setEvents(convertedEvents);
+      } catch (error) {
+        console.error('Error fetching events:', error);
+      }
+    };
+  
+    fetchEvents();
+  }, []);
 
   const to12HourFormat = (hour) => {
-    if (hour === 0) return "12 am";
-    else if (hour === 12) return "12 pm";
-    else if (hour < 12) return `${hour} am`;
-    else return `${hour - 12} pm`;
+    const suffix = hour >= 12 ? 'pm' : 'am';
+    const formattedHour = hour % 12 || 12;
+    return `${formattedHour} ${suffix}`;
   };
 
   const generateWeekDates = (startDate) => {
@@ -55,9 +80,7 @@ const App = () => {
     });
   };
 
-  const handleAddEventClick = () => {
-    setShowAddEventModal(true);
-  };
+  const handleAddEventClick = () => setShowAddEventModal(true);
 
   const handleCancelAddEvent = () => {
     setShowAddEventModal(false);
@@ -65,17 +88,13 @@ const App = () => {
     setEventDateTime('');
   };
 
-  const handleEventTitleChange = (e) => {
-    setEventTitle(e.target.value);
-  };
+  const handleEventTitleChange = (e) => setEventTitle(e.target.value);
 
-  const handleEventDateTimeChange = (e) => {
-    setEventDateTime(e.target.value);
-  };
+  const handleEventDateTimeChange = (e) => setEventDateTime(e.target.value);
+  
 
   const handleAddEventSubmit = async (e) => {
     e.preventDefault();
-  
     try {
       const response = await fetch('http://localhost:3001/api/add-event', {
         method: 'POST',
@@ -87,23 +106,25 @@ const App = () => {
           dateTime: eventDateTime
         })
       });
-  
       if (!response.ok) {
         throw new Error(`Failed to add event - ${response.status}`);
       }
-  
       const data = await response.json();
-      console.log('Event added successfully:', data);
-  
+      // Convert event date from UTC to local time zone
+      const convertedEvent = {
+        ...data,
+        dateTime: new Date(data.dateTime).toLocaleString()
+      };
+      console.log('Added event time:', convertedEvent.dateTime); // Log added event time
+      setEvents([...events, convertedEvent]);
       setEventTitle('');
       setEventDateTime('');
       setShowAddEventModal(false);
-  
+      window.location.reload(); // Refreshes page
     } catch (error) {
       console.error('Error adding event:', error);
     }
   };
-  
 
   return (
     <div className="App">
@@ -120,27 +141,36 @@ const App = () => {
           <div key={index} className="date-column">
             <h3>{date.toLocaleDateString("en-US", { weekday: 'long' })}</h3>
             <span>{date.toLocaleDateString()}</span>
-          </div>
-        ))}
-        {/* Render the days of the week */}
-        {daysOfWeek.map((day, index) => (
-          <div key={day} className="day">
-            <h2>{day}</h2>
             {/* Render the hours of the day */}
-            {hoursOfDay.map(hour => (
-              <div key={hour} className="hour">
-                <span>{to12HourFormat(hour)} </span>
-                {/* You can add tasks or events for each hour here */}
-              </div>
-            ))}
-            {/* Notes section */}
-            <div className="notes">
-              <textarea value={notes[day]} onChange={(e) => handleNotesChange(day, e)} placeholder="Add notes..." />
-            </div>
+            {hoursOfDay.map(hour => {
+              // Filter events for the current day and hour
+              const eventsForHour = events.filter(event => {
+                const eventDate = new Date(event.dateTime);
+                return (
+                  eventDate.getDate() === date.getDate() && // Check if the event is for the current day
+                  eventDate.getMonth() === date.getMonth() && // Checks if the event is on the right month
+                  eventDate.getFullYear() === date.getFullYear() && // Checks if the event is on the right year
+                  eventDate.getHours() === hour // Check if the event is at the current hour
+                );
+              });
+
+              // Render the hour and associated events
+              return (
+                <div key={hour} className="hour">
+                  <span>{to12HourFormat(hour)}</span>
+                  {/* Render events for the current hour */}
+                  {eventsForHour.map((event, eventIndex) => (
+                    <div key={eventIndex} className="event">
+                      {/* Render the task title */}
+                      {event.taskTitle}
+                    </div>
+                  ))}
+                </div>
+              );
+            })}
           </div>
         ))}
       </div>
-
       {/* Event Add Modal */}
       {showAddEventModal && (
         <div className="modal-overlay">
