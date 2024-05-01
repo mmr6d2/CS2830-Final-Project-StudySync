@@ -13,10 +13,10 @@ function AuthForm() {
     const handleSubmit = async (event) => {
         event.preventDefault();
         setLoading(true);
-        console.log(isLogin);
+        //console.log(isLogin);
         if(isLogin)
         {
-            console.log("Implement a log in function");
+            //console.log("Implement a log in function");
             setLoading(false);
         }
         else
