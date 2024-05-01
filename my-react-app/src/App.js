@@ -1,10 +1,12 @@
 import React from 'react';
 import './App.css';
-import { BrowserRouter as Router, Route, Routes, Link } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes, Link} from 'react-router-dom';
 
 import WeekView from './Pages/WeekView';
 import DayView from './Pages/DayView';
 import MonthView from './Pages/MonthView';
+import RegisterForm from './Pages/Register';
+
 
 const App: React.FC = () => {
   return (
@@ -23,6 +25,7 @@ const App: React.FC = () => {
           <Route path="/week" element={<WeekView />} />
           <Route path="/day" element={<DayView />} />
           <Route path="/month" element={<MonthView />} />
+          <Route path="/" element={<RegisterForm />} />
         </Routes>
       </div>
     </Router>
