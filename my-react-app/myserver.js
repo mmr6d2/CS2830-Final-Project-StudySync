@@ -18,7 +18,7 @@ app.use(express.json());
 const pool = mysql.createPool({
      host: "localhost",
      user: "root",//Your User ID here
-     password: "karen1231",//Insert your password here
+     password: "",//Insert your password here
      database: 'studysync',//Your Database name
      connectionLimit : 10
  });
@@ -135,7 +135,7 @@ app.post('/api/register', (req, res) => {
             if (err)//If SQL gives an error
             {
                 console.error('Error logging in:', err);//Print the error to the console
-                res.status(401).json({ error: 'Failed to find user' });//Inform the website it failed to add
+                res.status(500).json({ error: 'Failed to find user' });//Inform the website it failed to add
             }
             else//If successful
             {
@@ -145,12 +145,12 @@ app.post('/api/register', (req, res) => {
                 pool.query(sql2, function (err2, result2){
                     if(err2){
                         console.error('Error retrieving password:', err2);
-                        res.status(402).json({ error: 'Failed to find passowrd'});
+                        res.status(500).json({ error: 'Failed to find passowrd'});
                     }
                     else{
                         if(!bcrypt.compareSync(password, result2[0].hashedPassword)){
                             console.error('Incorrect password given');
-                            res.status(403).json({ error: 'Incorrect password'});
+                            res.status(500).json({ error: 'Incorrect password'});
                         }
                         else{
                             const token = jwt.encode({ userID: userID }, secret);//Sets a token to put on the users browser
