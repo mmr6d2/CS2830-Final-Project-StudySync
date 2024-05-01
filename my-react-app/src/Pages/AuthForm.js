@@ -16,8 +16,27 @@ function AuthForm() {
         //console.log(isLogin);
         if(isLogin)
         {
-            //console.log("Implement a log in function");
-            setLoading(false);
+            try {
+                const response = await fetch('http://localhost:3001/api/login', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json'
+                  },
+                  body: JSON.stringify({
+                    email: email,
+                    password: password
+                  })
+                });
+                if (!response.ok) {
+                  throw new Error(`Failed to add event - ${response.status}`);
+                }
+                const data = await response.json();
+                sessionStorage.setItem("token", data.token);
+            } 
+            finally {
+                setLoading(false); // Reset loading status regardless of outcome
+            }
+
         }
         else
         {
@@ -37,7 +56,7 @@ function AuthForm() {
                   throw new Error(`Failed to add event - ${response.status}`);
                 }
                 const data = await response.json();
-                localStorage.setItem("token", data.token);
+                sessionStorage.setItem("token", data.token);
             } 
             finally {
                 setLoading(false); // Reset loading status regardless of outcome
