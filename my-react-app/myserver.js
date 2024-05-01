@@ -2,7 +2,13 @@ const express = require('express');
 const cors = require('cors');
 const mysql = require('mysql2');
 const { Form } = require('react-router-dom');
+const bcrypt = require("bcryptjs");
+const jwt = require("jwt-simple");
 
+
+
+// For encoding/decoding JWT
+const secret = "randomStuffNoOneWillGuess";//No need to change since we aren't actually hosting
 
 const app = express();
 const port = 3001;
@@ -12,7 +18,7 @@ app.use(express.json());
 const pool = mysql.createPool({
      host: "localhost",
      user: "root",//Your User ID here
-     password: "Lps800691*",//Insert your password here
+     password: "karen1231",//Insert your password here
      database: 'studysync',//Your Database name
      connectionLimit : 10
  });
@@ -69,35 +75,52 @@ app.post('/api/add-event', (req, res) => {
     }
 });
 
-// Route to get calendar events from the database of a specific day
-app.post('/api/get-event', (req,res) => {
-    const eventData = req.body;//Gets the JSON body
-    console.log('Recieved event data:'. eventData);
 
-    if(eventData)
-    {
-        var {userID, dateTime} = eventData;//Parses the JSON sent to the function
-        var FormattedDate = new Date(dateTime).toISOString().slice(0,19).replace('T', ' ');//Sets the date in SQL Format
-        //Get Event from database
-        var sql = "SELECT * FROM task JOIN sharedtask WHERE Date(dateTime) = "+FormattedDate+" AND (sharedUser = +"+ userID +" OR userID = "+ userID +") ORDER BY dateTime ASC";
-        pool.query(sql, function (err, results){
-            if(err)//If SQL gives error
-            {
-                console.error('Error retrieving:', err);
-                res.status(500).json({ error: 'Failed to retrieve from database'});//Sends message that it failed
+app.post('/api/register', (req, res) => {
+    const eventData = req.body;
+    if(eventData){
+        const { email, password, username} = eventData;
+        const hash = bcrypt.hashSync(password, 10);
+        const sql1 = "INSERT INTO user (email, userName) VALUES ('"+email+"', '"+username+"')";  
+        pool.query(sql1, function (err, result){
+            if (err) {
+                console.error('Error during registration:', err);
+                res.status(500).json({ error: 'Registration failed' });
+            } else {
+                const sql2 = "Select * From user Where email = '" + email +"'";
+                pool.query(sql2, function (err2, result2){
+                    if (err2) {//Should never be able to run into this error. But here just in case. This will make the email unusable until deleted
+                        console.error('Error during registration:', err2);
+                        res.status(500).json({ error: 'Registration failed' });
+                    }
+                    else
+                    {
+                        const userID = result2[0].userID;
+                        console.log(result2);
+                        const sql3 = "INSERT INTO userpassword (userID, hashedPassword) VALUES ('"+userID+"', '"+hash+"')";
+                        pool.query(sql3, function (err3, result3){
+                            if(err3)
+                            {
+                                console.error("Error during registration:", err3);
+                                res.status(500).json({ error: 'Registration failed' });
+                            }
+                            else
+                            {
+                                console.log("Logged in user: " + userID);
+                                const token = jwt.encode({ userID: userID }, secret);
+                                res.status(201).json({ token: token });
+                            }
+                        });
+                    }
+                });
             }
-            else
-            {
-                console.log("Records retrieved");
-                res.status(201).send(results);//Sends the resuts of the query
-            }
-        })
+        });
     }
-    else
-    {
-        res.status(400).json({ error: 'Pull Request Data Not Recieved'});//Tells the webpage that no data was sent to it
+    else{
+        res.status(400).json({ error: 'Data not recieved' })
     }
-});
+  });
+
 
 // Default route
 app.get('/', (req, res) => res.send('Hello World!'));
