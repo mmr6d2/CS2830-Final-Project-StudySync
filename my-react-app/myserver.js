@@ -18,7 +18,7 @@ app.use(express.json());
 const pool = mysql.createPool({
      host: "localhost",
      user: "root",//Your User ID here
-     password: "",//Insert your password here
+     password: "karen1231",//Insert your password here
      database: 'studysync',//Your Database name
      connectionLimit : 10
  });
@@ -78,16 +78,16 @@ app.post('/api/add-event', (req, res) => {
 
 app.post('/api/register', (req, res) => {
     const eventData = req.body;
-    if(eventData){
-        const { email, password, username} = eventData;
-        const hash = bcrypt.hashSync(password, 10);
-        const sql1 = "INSERT INTO user (email, userName) VALUES ('"+email+"', '"+username+"')";  
+    if(eventData){//Makes sure there is event data
+        const { email, password, username} = eventData;//Gets the values
+        const hash = bcrypt.hashSync(password, 10);//Encrypts the password
+        const sql1 = "INSERT INTO user (email, userName) VALUES ('"+email+"', '"+username+"')";  //Makes new user
         pool.query(sql1, function (err, result){
             if (err) {
                 console.error('Error during registration:', err);
                 res.status(500).json({ error: 'Registration failed' });
             } else {
-                const sql2 = "Select * From user Where email = '" + email +"'";
+                const sql2 = "Select * From user Where email = '" + email +"'";//Gets new users userID
                 pool.query(sql2, function (err2, result2){
                     if (err2) {//Should never be able to run into this error. But here just in case. This will make the email unusable until deleted
                         console.error('Error during registration:', err2);
@@ -98,7 +98,7 @@ app.post('/api/register', (req, res) => {
                         const userID = result2[0].userID;
                         console.log(result2);
                         const sql3 = "INSERT INTO userpassword (userID, hashedPassword) VALUES ('"+userID+"', '"+hash+"')";
-                        pool.query(sql3, function (err3, result3){
+                        pool.query(sql3, function (err3, result3){//Inserts the userID and Password into the table
                             if(err3)
                             {
                                 console.error("Error during registration:", err3);
@@ -107,7 +107,7 @@ app.post('/api/register', (req, res) => {
                             else
                             {
                                 console.log("Logged in user: " + userID);
-                                const token = jwt.encode({ userID: userID }, secret);
+                                const token = jwt.encode({ userID: userID }, secret);//Sets a token to put on the users browser
                                 res.status(201).json({ token: token });
                             }
                         });
@@ -121,6 +121,50 @@ app.post('/api/register', (req, res) => {
     }
   });
 
+
+  // Route to login a user
+  app.post('/api/login', (req, res) => {
+    const eventData = req.body;
+    if(eventData)
+    {
+        const { email, password } = req.body;
+        const sql = "SELECT * FROM user WHERE email = '" + email + "'";  
+        console.log("1");
+        pool.query(sql, function (err, result){//Querys to add the values in
+            console.log("2");
+            if (err)//If SQL gives an error
+            {
+                console.error('Error logging in:', err);//Print the error to the console
+                res.status(401).json({ error: 'Failed to find user' });//Inform the website it failed to add
+            }
+            else//If successful
+            {
+                const userID = result[0].userID;
+                const sql2 = "SELECT * FROM userpassword WHERE userID = '" + userID + "'";
+                console.log("3");
+                pool.query(sql2, function (err2, result2){
+                    if(err2){
+                        console.error('Error retrieving password:', err2);
+                        res.status(402).json({ error: 'Failed to find passowrd'});
+                    }
+                    else{
+                        if(!bcrypt.compareSync(password, result2[0].hashedPassword)){
+                            console.error('Incorrect password given');
+                            res.status(403).json({ error: 'Incorrect password'});
+                        }
+                        else{
+                            const token = jwt.encode({ userID: userID }, secret);//Sets a token to put on the users browser
+                            res.status(201).json({ token: token});
+                        }
+                    }
+                });
+            }
+        });   
+    }
+    else{
+        res.status(500).json({ error: 'No data sent'});
+    }
+  });
 
 // Default route
 app.get('/', (req, res) => res.send('Hello World!'));
