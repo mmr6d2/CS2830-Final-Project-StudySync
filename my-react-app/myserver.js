@@ -18,7 +18,7 @@ app.use(express.json());
 const pool = mysql.createPool({
      host: "localhost",
      user: "root",//Your User ID here
-     password: "",//Insert your password here
+     password: "karen1231",//Insert your password here
      database: 'studysync',//Your Database name
      connectionLimit : 10
  });
@@ -30,19 +30,29 @@ const pool = mysql.createPool({
 
 
 // Route to fetch all events from the database
-app.get('/api/events', (req, res) => {
+app.post('/api/events', (req, res) => {
     // Query to select all events from the database
-    const sql = "SELECT * FROM task";
-    // Execute the query
-    pool.query(sql, (err, result) => {
-        if (err) {
-            console.error('Error fetching events:', err);
-            res.status(500).json({ error: 'Failed to fetch events' });
-        } else {
-            // Send the fetched events as JSON response
-            res.status(200).json(result);
-        }
-    });
+    const reqData = req.body;
+    if(reqData)
+    {
+        const token = reqData.token;
+        const decoded = jwt.decode(token, secret).userID;
+        const sql = "SELECT * FROM task CROSS JOIN sharedtask WHERE (sharedUser = '"+ decoded +"' OR userID = '" + decoded + "') ORDER BY dateTime ASC";
+        // Execute the query
+        pool.query(sql, (err, result) => {
+            if (err) {
+                console.error('Error fetching events:', err);
+                res.status(500).json({ error: 'Failed to fetch events' });
+            } else {
+                // Send the fetched events as JSON response
+                res.status(200).json(result);
+            }
+        });
+    }
+    else
+    {
+        res.status(500).json({ error: "Not logged in" });
+    }
 });
 
 
@@ -129,9 +139,9 @@ app.post('/api/register', (req, res) => {
     {
         const { email, password } = req.body;
         const sql = "SELECT * FROM user WHERE email = '" + email + "'";  
-        console.log("1");
+        //console.log("1");
         pool.query(sql, function (err, result){//Querys to add the values in
-            console.log("2");
+            //console.log("2");
             if (err)//If SQL gives an error
             {
                 console.error('Error logging in:', err);//Print the error to the console
@@ -141,7 +151,7 @@ app.post('/api/register', (req, res) => {
             {
                 const userID = result[0].userID;
                 const sql2 = "SELECT * FROM userpassword WHERE userID = '" + userID + "'";
-                console.log("3");
+                //console.log("3");
                 pool.query(sql2, function (err2, result2){
                     if(err2){
                         console.error('Error retrieving password:', err2);
