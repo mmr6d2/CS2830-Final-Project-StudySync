@@ -13,7 +13,16 @@ const DayView = () => {
   useEffect(() => {
     const fetchEvents = async () => {
       try {
-        const response = await fetch('http://localhost:3001/api/events');
+        const token = sessionStorage.getItem("token");
+        const response = await fetch('http://localhost:3001/api/events', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            token: token
+          })
+        });
         if (!response.ok) {
           throw new Error(`Failed to fetch events - ${response.status}`);
         }
