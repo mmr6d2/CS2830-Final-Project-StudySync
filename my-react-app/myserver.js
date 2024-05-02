@@ -62,11 +62,12 @@ app.post('/api/add-event', (req, res) => {
     console.log('Received event data:', eventData);
 
     if (eventData) {
-        var {title, dateTime} = eventData;//Parses the JSON sent to the function
+        var {title, dateTime, token} = eventData;//Parses the JSON sent to the function
+        var decoded = jwt.decode(token, secret).userID;
         var FormattedDate = new Date(dateTime).toISOString().slice(0, 19).replace('T', ' ')//Sets the date in SQL Format by slicing it
 
         // Add event to database
-        var sql = "INSERT INTO task (taskTitle, userID, dateTime) VALUES ('"+title+"', '123', '"+FormattedDate+"')";//The SQL Insert statement, Note 123 is a current placeholder
+        var sql = "INSERT INTO task (taskTitle, userID, dateTime) VALUES ('"+title+"', '"+decoded+"', '"+FormattedDate+"')";//The SQL Insert statement, Note 123 is a current placeholder
         pool.query(sql, function (err, result){//Querys to add the values in
             if (err)//If SQL gives an error
             {
@@ -75,8 +76,7 @@ app.post('/api/add-event', (req, res) => {
             }
             else//If successful
             {
-                
-                console.log("1 record inserted");//Print that it recorded the data
+                //console.log("1 record inserted");//Print that it recorded the data
                 res.status(201).json({ message: 'Data added successfully'});  //Send to the database a success along with event and insertID 
             }
         });
