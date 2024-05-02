@@ -73,6 +73,7 @@ const DayView = () => {
   const handleAddEventSubmit = async (e) => {
     e.preventDefault();
     try {
+      const token = sessionStorage.getItem("token");
       const response = await fetch('http://localhost:3001/api/add-event', {
         method: 'POST',
         headers: {
@@ -80,7 +81,8 @@ const DayView = () => {
         },
         body: JSON.stringify({
           title: eventTitle,
-          dateTime: eventDateTime
+          dateTime: eventDateTime,
+          token: token
         })
       });
       if (!response.ok) {
