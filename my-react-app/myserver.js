@@ -28,19 +28,57 @@ const pool = mysql.createPool({
 // })
 //Above is a test query to make sure it works
 
-app.post('/api/getOwnedEvents', (req, res) => {
+
+
+app.post('/api/shareEvent', (req, res) => {
     const reqData = req.body;
-    if(reqData){
-        const token = reqData.token;
-        const decoded  = jwt.decode(token, secret).userID;
-        const sql = "SELECT * FROM task WHERE userID = '" + decoded + "' ORDER BY dateTime ASC";
+    if(reqData){//If the request has a body
+        var {eventID, shareUser} = reqData;//Gets JSON data
+        const sql = "SELECT * FROM user WHERE userName = '"+shareUser+"'";//First SQL to match username to get the ID
         pool.query(sql, (err, result) =>{
-            if(err){
+            if(err){//If SQL errors
+                console.error('Error sharing event:', err);
+                res.status(500).json({ error: 'Failed to find user' });
+            }
+            else{
+                if(result.length == 0){
+                    res.status(500).json({ error: 'No user by that information'});
+                }
+                else{
+                    const userID = result[0].userID;//Set the ID of the shared user
+                    const sql2 = "INSERT INTO sharedtask (sharedTaskID, sharedUser) VALUES ('"+eventID+"', '"+userID+"')";//Add the data into sharedTask
+                    pool.query(sql2, (err2, result2) =>{
+                        if(err){
+                            console.error('Error inserting shared event:', err);
+                            res.status(500).json({ error: 'Failed to insert data'});
+                        }
+                        else{
+                            res.status(200).json({ result: "success"});//Return all tasks they own
+                        }
+                    });
+                }
+            }
+        });
+    }
+    else{
+        res.status(500).json({ error: "Not logged in" });
+    }
+
+});
+
+app.post('/api/getOwnedEvents', (req, res) => {//Retrieved all events that a user owns 
+    const reqData = req.body;
+    if(reqData){//If the request has a body
+        const token = reqData.token;//Get the token
+        const decoded  = jwt.decode(token, secret).userID;//Decode it for the userID
+        const sql = "SELECT * FROM task WHERE userID = '" + decoded + "' ORDER BY dateTime ASC";//Find all the tasks that they own
+        pool.query(sql, (err, result) =>{
+            if(err){//If SQL errors
                 console.error('Error fetching events:', err);
                 res.status(500).json({ error: 'Failed to fetch events' });
             }
             else{
-                res.status(200).json(result);
+                res.status(200).json(result);//Return all tasks they own
             }
         });
     }
@@ -49,25 +87,25 @@ app.post('/api/getOwnedEvents', (req, res) => {
     }
 })
 
-app.post('/api/deleteEvent', (req, res) => {
+app.post('/api/deleteEvent', (req, res) => {//Delete a specific event from a user
     const reqData = req.body;
     if(reqData){
-        const taskID = reqData.eventID;
+        const taskID = reqData.eventID;//Get the taskID to delete
         const sql = "DELETE FROM sharedtask WHERE sharedTaskID='" + taskID + "'";
-        pool.query(sql, (err, result) =>{
+        pool.query(sql, (err, result) =>{//Delete the event from the sharedtask table first since it is dependant on task
             if(err){
                 console.error('Error deleting event:', err);
                 res.status(500).json({ error: 'Failed deleting from sharedTask'});
             }
             else{
                 const sql2 = "DELETE FROM task WHERE taskID='" + taskID + "'";
-                pool.query(sql2, (err2, result2) =>{
+                pool.query(sql2, (err2, result2) =>{//Delete from task table since it is removed from sharedtask
                     if(err){
                         console.error('Error deleting event:', err);
                         res.status(500).json({ error: 'Failed deleting from main channel'});
                     }
                     else{
-                        res.status(201).json({ status: 'Successful delete'});
+                        res.status(201).json({ status: 'Successful delete'});//Just send back that it worked
                     }
                 });
             }
