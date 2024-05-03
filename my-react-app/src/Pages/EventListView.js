@@ -46,11 +46,22 @@ const App = () => {
       <div className="EventList">
         <table style={{marginLeft:"auto", marginRight:"auto"}}>
         <caption>Events</caption>
-        <tr>
+        <thead>
+        <tr key="-1">
           <th>Title</th>
           <th>Date</th>
+          <th>Delete</th>
         </tr>
-        {events.map((currentEvent) => <tr><td>{currentEvent.taskTitle}</td><td>{new Date(currentEvent.dateTime).toISOString().slice(0, 19).replace('T', ' ')}</td></tr>)}
+        </thead>
+        <tbody>
+        {events.map((currentEvent, currentIndex) => <tr key={currentIndex}>
+          <td>{currentEvent.taskTitle}</td>
+          <td>{new Date(currentEvent.dateTime).toISOString().slice(0, 19).replace('T', ' ')}</td>
+
+          <td><button className="mr-1 inline-block bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded" onClick={ (e) => handleDelete(e, currentEvent.taskID)}>Delete</button></td>
+        </tr>
+        )}
+        </tbody>
       </table>
       </div>
     );
@@ -60,6 +71,28 @@ const App = () => {
 
   const handleEventDateTimeChange = (e) => setEventDateTime(e.target.value);
   
+  const handleDelete = async (e, id) =>{
+    e.preventDefault();
+    try {
+      console.log(id);
+      const response = await fetch('http://localhost:3001/api/deleteEvent', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          eventID : id
+        })
+      });
+      if (!response.ok) {
+        throw new Error(`Failed to delete event - ${response.status}`);
+      }
+      //console.log("refresh");
+      window.location.reload();//Refreshes page
+    } catch (error) {
+      console.error('Error deleting event:', error);
+    }
+  };
 
   const handleAddEventSubmit = async (e) => {
     e.preventDefault();
