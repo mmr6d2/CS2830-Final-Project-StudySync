@@ -28,6 +28,28 @@ const pool = mysql.createPool({
 // })
 //Above is a test query to make sure it works
 
+app.post('/api/getOwnedEvents', (req, res) => {
+    const reqData = req.body;
+    if(reqData){
+        const token = reqData.token;
+        const decoded  = jwt.decode(token, secret).userID;
+        const sql = "SELECT * FROM task WHERE userID = '" + decoded + "' ORDER BY dateTime ASC";
+        pool.query(sql, (err, result) =>{
+            if(err){
+                console.error('Error fetching events:', err);
+                res.status(500).json({ error: 'Failed to fetch events' });
+            }
+            else{
+                res.status(200).json(result);
+            }
+        });
+    }
+    else{
+        res.status(500).json({ error: "Not logged in" });
+    }
+})
+
+
 
 // Route to fetch all events from the database
 app.post('/api/events', (req, res) => {
@@ -64,7 +86,7 @@ app.post('/api/add-event', (req, res) => {
     if (eventData) {
         var {title, dateTime, token} = eventData;//Parses the JSON sent to the function
         var decoded = jwt.decode(token, secret).userID;
-        var FormattedDate = new Date(dateTime).toISOString().slice(0, 19).replace('T', ' ')//Sets the date in SQL Format by slicing it
+        var FormattedDate = dateTime.slice(0, 19).replace('T', ' ')//Sets the date in SQL Format by slicing it
 
         // Add event to database
         var sql = "INSERT INTO task (taskTitle, userID, dateTime) VALUES ('"+title+"', '"+decoded+"', '"+FormattedDate+"')";//The SQL Insert statement, Note 123 is a current placeholder
