@@ -49,6 +49,35 @@ app.post('/api/getOwnedEvents', (req, res) => {
     }
 })
 
+app.post('/api/deleteEvent', (req, res) => {
+    const reqData = req.body;
+    if(reqData){
+        const taskID = reqData.eventID;
+        const sql = "DELETE FROM sharedtask WHERE sharedTaskID='" + taskID + "'";
+        pool.query(sql, (err, result) =>{
+            if(err){
+                console.error('Error deleting event:', err);
+                res.status(500).json({ error: 'Failed deleting from sharedTask'});
+            }
+            else{
+                const sql2 = "DELETE FROM task WHERE taskID='" + taskID + "'";
+                pool.query(sql2, (err2, result2) =>{
+                    if(err){
+                        console.error('Error deleting event:', err);
+                        res.status(500).json({ error: 'Failed deleting from main channel'});
+                    }
+                    else{
+                        res.status(201).json({ status: 'Successful delete'});
+                    }
+                });
+            }
+        });
+    }
+    else{
+        res.status(500).json({ error: "taskID not sent"});
+    }
+});
+
 
 
 // Route to fetch all events from the database
@@ -59,7 +88,7 @@ app.post('/api/events', (req, res) => {
     {
         const token = reqData.token;
         const decoded = jwt.decode(token, secret).userID;
-        const sql = "SELECT * FROM task CROSS JOIN sharedtask WHERE (sharedUser = '"+ decoded +"' OR userID = '" + decoded + "') ORDER BY dateTime ASC";
+        const sql = "SELECT * FROM task LEFT JOIN sharedtask ON task.taskID = sharedtask.sharedTaskID WHERE task.userID = '"+decoded+"' OR sharedtask.sharedUser = '"+decoded+"' ORDER BY task.dateTime ASC";
         // Execute the query
         pool.query(sql, (err, result) => {
             if (err) {
