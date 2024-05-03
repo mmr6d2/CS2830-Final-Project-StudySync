@@ -4,7 +4,7 @@ import '../App.css';
 const App = () => {
   const [startDate, setStartDate] = useState(new Date());
   const daysOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-  const hoursOfDay = Array.from({ length: 15 }, (_, i) => i + 6); // Hours from 6am to 8pm
+  const hoursOfDay = Array.from({ length: 24 }, (_, i) => i); // Hours of the day
   const [notes, setNotes] = useState({});
   const [showAddEventModal, setShowAddEventModal] = useState(false);
   const [eventTitle, setEventTitle] = useState('');
@@ -35,7 +35,7 @@ const App = () => {
         const data = await response.json();
   
         // Convert event dates from UTC to local time zone
-        const convertedEvents = data.map(event => {
+        /*const convertedEvents = data.map(event => {
           const eventDate = new Date(event.dateTime);
           // Adjust for the timezone offset
           const localDate = new Date(eventDate.getTime() - (eventDate.getTimezoneOffset() * 60000));
@@ -43,9 +43,9 @@ const App = () => {
             ...event,
             dateTime: localDate.toLocaleString() // Convert to local time string
           };
-        });
+        });*/
   
-        setEvents(convertedEvents);
+        setEvents(data);
       } catch (error) {
         console.error('Error fetching events:', error);
       }
@@ -105,6 +105,7 @@ const App = () => {
   const handleAddEventSubmit = async (e) => {
     e.preventDefault();
     try {
+      console.log(eventDateTime);
       const token = sessionStorage.getItem("token");
       const response = await fetch('http://localhost:3001/api/add-event', {
         method: 'POST',
@@ -121,13 +122,8 @@ const App = () => {
         throw new Error(`Failed to add event - ${response.status}`);
       }
       const data = await response.json();
-      // Convert event date from UTC to local time zone
-      const convertedEvent = {
-        ...data,
-        dateTime: new Date(data.dateTime).toLocaleString()
-      };
-      console.log('Added event time:', convertedEvent.dateTime); // Log added event time
-      setEvents([...events, convertedEvent]);
+      console.log('Added event time:', data.dateTime); // Log added event time
+      setEvents([...events, data]);
       setEventTitle('');
       setEventDateTime('');
       setShowAddEventModal(false);
@@ -146,6 +142,32 @@ const App = () => {
           <button className="inline-block bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded" onClick={handleAddEventClick}>Add Event</button>
         </div>
       </header>
+      {/* Event Add Modal */}
+      {showAddEventModal && (
+        <div className="modal-overlay">
+          <div className="modal">
+            <form className="event-form" onSubmit={handleAddEventSubmit}>
+              <input
+                type="text"
+                value={eventTitle}
+                onChange={handleEventTitleChange}
+                placeholder="Event Title"
+                required
+              />
+              <input
+                type="datetime-local"
+                value={eventDateTime}
+                onChange={handleEventDateTimeChange}
+                required
+              />
+              <div>
+                <button type="submit" className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mr-2">Submit</button>
+                <button type="button" className="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded" onClick={handleCancelAddEvent}>Cancel</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
       <div className="planner">
         {/* Render the dates of the week */}
         {generateWeekDates(startDate).map((date, index) => (
@@ -182,32 +204,6 @@ const App = () => {
           </div>
         ))}
       </div>
-      {/* Event Add Modal */}
-      {showAddEventModal && (
-        <div className="modal-overlay">
-          <div className="modal">
-            <form className="event-form" onSubmit={handleAddEventSubmit}>
-              <input
-                type="text"
-                value={eventTitle}
-                onChange={handleEventTitleChange}
-                placeholder="Event Title"
-                required
-              />
-              <input
-                type="datetime-local"
-                value={eventDateTime}
-                onChange={handleEventDateTimeChange}
-                required
-              />
-              <div>
-                <button type="submit" className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mr-2">Submit</button>
-                <button type="button" className="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded" onClick={handleCancelAddEvent}>Cancel</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
