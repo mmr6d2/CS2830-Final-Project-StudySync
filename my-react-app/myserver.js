@@ -78,6 +78,7 @@ app.post('/api/getOwnedEvents', (req, res) => {//Retrieved all events that a use
                 res.status(500).json({ error: 'Failed to fetch events' });
             }
             else{
+                console.log(result[0].dateTime);
                 res.status(200).json(result);//Return all tasks they own
             }
         });
