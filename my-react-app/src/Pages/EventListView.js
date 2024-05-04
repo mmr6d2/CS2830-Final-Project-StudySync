@@ -93,7 +93,7 @@ const App = () => {
   }, []);
 
 
-  const handleAddEventClick = () => setShowAddEventModal(true);//Function sourced from MonthView
+  const handleAddEventClick = () =>  setShowAddEventModal(true);//Function sourced from MonthView
 
   const handleCancelAddEvent = () => {//Function sourced from MonthView
     setShowAddEventModal(false);
@@ -122,7 +122,7 @@ const App = () => {
         <tbody>
         {events.map((currentEvent, currentIndex) => <tr key={currentEvent.taskID}>
           <td>{currentEvent.taskTitle}</td>
-          <td>{new Date(currentEvent.dateTime).toISOString().slice(0, 19).replace('T', ' ')}</td>
+          <td>{new Date(currentEvent.dateTime).toString().slice(0,21)}</td>
           <td>
             <div>
             <form onSubmit={(e) => handleShare(e, currentEvent.taskID, shareNames[currentIndex])}> 
