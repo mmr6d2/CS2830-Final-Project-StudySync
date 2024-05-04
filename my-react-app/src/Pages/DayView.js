@@ -147,7 +147,7 @@ const DayView = () => {
           </div>
         </div>
       )}
-      <div className="planner">
+      <div className="planner2">
         <h3>{selectedDate.toLocaleDateString("en-US", { weekday: 'long' })}</h3>
         <span>{selectedDate.toLocaleDateString()}</span>
         {/* Render the hours of the day */}
